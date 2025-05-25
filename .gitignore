@@ -139,6 +139,7 @@ node_modules
 .env
 .npmrc
 .idea
+cache_forge
 
 # Hardhat files
 /cache

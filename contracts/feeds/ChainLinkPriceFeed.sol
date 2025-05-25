@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import "./base/PriceFeed.sol";
+import "../libraries/Utils.sol";
 
 /// @title ChainLink Price Feed
 /// @author Daniel D. Alcarraz (https://github.com/0xDanr)
@@ -17,8 +18,8 @@ contract ChainLinkPriceFeed is PriceFeed {
 
     /// @dev Initialize decimals, oracle, and oracle decimals
     constructor(uint16 _feedId, uint8 _decimals, address _oracle, uint8 _oracleDecimals) PriceFeed(_feedId, _decimals) {
-        require(_oracleDecimals >= 6, "INVALID_ORACLE_DECIMALS");
         require(_oracle != address(0), "ZERO_ADDRESS");
+        require(_oracleDecimals >= 6, "INVALID_ORACLE_DECIMALS");
 
         oracle = _oracle;
         oracleDecimals = _oracleDecimals;
@@ -34,21 +35,6 @@ contract ChainLinkPriceFeed is PriceFeed {
         }
 
         stale = block.timestamp - updatedAt > maxAge;
-        price = _convertDecimals(uint256(feedPrice), oracleDecimals, decimals);
-    }
-
-    /// @dev Convert value number from a fromDecimals number to a toDecimals number
-    /// @param value - number to convert
-    /// @param fromDecimals - decimals of value to convert from
-    /// @param toDecimals - decimals value will be converted to
-    /// @return converted - value as a toDecimals number
-    function _convertDecimals(uint256 value, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256 converted) {
-        if (fromDecimals == toDecimals) {
-            return value;
-        } else if (fromDecimals > toDecimals) {
-            return value / (10 ** (fromDecimals - toDecimals));
-        } else {
-            return value * (10 ** (toDecimals - fromDecimals));
-        }
+        price = Utils.convertDecimals(uint256(feedPrice), oracleDecimals, decimals);
     }
 }
