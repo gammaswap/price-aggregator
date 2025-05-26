@@ -4,6 +4,7 @@ pragma solidity >=0.8.0;
 import "forge-std/Test.sol";
 import "./contracts/TestPriceFeed.sol";
 import "../contracts/PriceAggregator.sol";
+import "../contracts/libraries/Utils.sol";
 
 contract PriceFeedAggregatorTest is Test {
 
@@ -16,6 +17,29 @@ contract PriceFeedAggregatorTest is Test {
 
         agg = new PriceAggregator(address(0));
         agg.addPriceFeed(address(feed));
+    }
+
+    function testDecimalConversions() public {
+        (uint128 value, uint8 fromDecimals, uint8 toDecimals) = (0, 13, 0);
+        fromDecimals = uint8(bound(fromDecimals, 6, 18));
+        toDecimals = uint8(bound(toDecimals, 6, 18));
+        value = uint128(bound(value, 1e6, 1e20));
+
+        uint256 answer = Utils.convertDecimals(value, fromDecimals, toDecimals);
+
+        if(fromDecimals == toDecimals) {
+            assertEq(value, answer);
+        } else if(fromDecimals > toDecimals) {
+            uint256 diff = fromDecimals - toDecimals;
+            uint256 threshold = 10**diff;
+            if(value < threshold) {
+                assertEq(answer,0);
+            } else {
+                assertGt(answer,0);
+            }
+        } else if(fromDecimals < toDecimals) {
+            assertGt(answer,0);
+        }
     }
 
     function testAddPriceFeed() public {
