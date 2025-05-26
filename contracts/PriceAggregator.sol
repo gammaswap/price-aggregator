@@ -70,7 +70,13 @@ contract PriceAggregator is IPriceAggregator, Initializable, UUPSUpgradeable, Tr
 
     /// @inheritdoc IPriceAggregator
     function getPrice(uint16 feedId, uint256 maxAge, bool strict) external virtual override view returns (uint256) {
-        return IPriceFeed(getPriceFeed[feedId]).getPrice(maxAge, strict);
+        require(feedId > 0, "ZERO_ID");
+
+        address feed = getPriceFeed[feedId];
+
+        require(feed != address(0), "ZERO_ADDRESS");
+
+        return IPriceFeed(feed).getPrice(maxAge, strict);
     }
 
     function getGammaPoolAddress(address, uint16) internal virtual override view returns(address) {
