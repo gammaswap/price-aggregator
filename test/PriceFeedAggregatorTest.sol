@@ -33,8 +33,12 @@ contract PriceFeedAggregatorTest is Test {
         agg.addPriceFeed(address(feed1));
 
         TestPriceFeed2 feed2 = new TestPriceFeed2(2, 6);
+
+        vm.prank(address(1));
+        vm.expectRevert("Ownable: caller is not the owner");
         agg.addPriceFeed(address(feed2));
 
+        agg.addPriceFeed(address(feed2));
         assertEq(agg.getPriceFeed(2), address(feed2));
     }
 
@@ -68,6 +72,10 @@ contract PriceFeedAggregatorTest is Test {
         vm.expectRevert("PRICE_FEED_DOES_NOT_EXIST");
         agg.updatePriceFeed(2, address(feed2));
 
+        vm.prank(address(1));
+        vm.expectRevert("Ownable: caller is not the owner");
+        agg.updatePriceFeed(1, address(feed1));
+
         agg.updatePriceFeed(1, address(feed1));
         assertEq(agg.getPriceFeed(1), address(feed1));
         assertNotEq(address(feed), address(feed1));
@@ -81,6 +89,10 @@ contract PriceFeedAggregatorTest is Test {
         agg.removePriceFeed(2);
 
         assertEq(agg.getPriceFeed(1), address(feed));
+
+        vm.prank(address(1));
+        vm.expectRevert("Ownable: caller is not the owner");
+        agg.removePriceFeed(1);
 
         agg.removePriceFeed(1);
 
