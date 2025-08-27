@@ -46,7 +46,7 @@ contract MultiSourceChainLinkPriceFeed is PriceFeed {
                 stale = isStale;
                 price = oraclePrice;
             } else {
-                stale = stale && isStale;
+                stale = stale || isStale;
                 price = price * oraclePrice / 1e18;
             }
 

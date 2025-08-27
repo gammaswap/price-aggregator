@@ -29,7 +29,7 @@ contract ChainLinkPriceFeedTest is Test {
         uint256 price = feed.getPrice(type(uint256).max, false);
         assertEq(price, 1e6);
 
-        feed.getPrice(type(uint256).max, true);
+        price = feed.getPrice(type(uint256).max, true);
         assertEq(price, 1e6);
 
         oracle.setAnswer(2e8);
