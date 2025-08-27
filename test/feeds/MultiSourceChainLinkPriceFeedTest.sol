@@ -38,6 +38,45 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         feed = new TestMultiSourceChainLinkPriceFeed(1, 6, mOracles, mOracleDecimals, mIsReverse);
     }
 
+    function testBTCUSD_ETHUSD_PriceFeed() public {
+        address[] memory oracles = new address[](2);
+        uint8[] memory oracleDecimals = new uint8[](2);
+        bool[] memory isReverse = new bool[](2);
+
+        oracle1 = new TestChainLinkOracle(); // cbBtc/usd
+        oracle2 = new TestChainLinkOracle(); // eth/usd
+        oracles[0] = address(oracle1);
+        oracles[1] = address(oracle2);
+        oracleDecimals[0] = 8;
+        oracleDecimals[1] = 8;
+
+        int256 btcUsdPx = 11147686164321;
+        int256 ethUsdPx = 464046457000;
+        oracle1.setAnswer(btcUsdPx);
+        oracle2.setAnswer(ethUsdPx);
+
+        // (cbBTC/USD) x (USD/ETH) = (cbBTC/USD) / (ETH/USD) = cbBTC/ETH => reverse ETH/USD
+
+        isReverse[0] = false;
+        isReverse[1] = true;
+
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 18, oracles, oracleDecimals, isReverse);
+
+        uint256 price = feed.getPrice(type(uint256).max, false);
+        assertApproxEqRel(price,uint256(btcUsdPx)*1e18/uint256(ethUsdPx),1e12);
+
+        oracle1.setAnswer(ethUsdPx);
+        oracle2.setAnswer(btcUsdPx);
+
+        // (ETH/USD) x (USD/cbBTC) = (ETH/USD) / (cbBTC/USD) = ETH/cbBTC => reverse cbBTC/USD
+
+        isReverse[0] = false;
+        isReverse[1] = true;
+
+        price = feed.getPrice(type(uint256).max, false);
+        assertApproxEqRel(price,uint256(ethUsdPx)*1e18/uint256(btcUsdPx),1e12);
+    }
+
     function testMultiSourceChainLinkConstructorErrors() public {
         address[] memory oracles = new address[](0);
         uint8[] memory oracleDecimals = new uint8[](1);
