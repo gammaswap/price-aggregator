@@ -14,33 +14,33 @@ contract MultiSourceChainLinkPriceFeed is PriceFeed {
     uint8[] public oracleDecimals;
 
     /// @dev address of price feed contract in ChainLink
-    address[] public oracle;
+    address[] public oracles;
 
     /// @dev if true use the reciprocal of the price returned by ChainLink
     bool[] public isReverse;
 
-    /// @dev Initialize decimals, oracle, and oracle decimals
-    constructor(uint16 _feedId, uint8 _decimals, address[] memory _oracle, uint8[] memory _oracleDecimals, bool[] memory _isReverse) PriceFeed(_feedId, _decimals) {
-        require(_oracle.length > 0, "ZERO_ORACLE_ADDRESSES");
-        require(_oracle.length != _oracleDecimals.length, "INVALID_ORACLE_LENGTH");
-        require(_oracle.length != _isReverse.length, "INVALID_REVERSE_LENGTH");
-        for(uint256 i = 0; i < _oracle.length;) {
-            require(_oracle[i] != address(0), "ZERO_ADDRESS");
+    /// @dev Initialize decimals, oracles, and oracle decimals
+    constructor(uint16 _feedId, uint8 _decimals, address[] memory _oracles, uint8[] memory _oracleDecimals, bool[] memory _isReverse) PriceFeed(_feedId, _decimals) {
+        require(_oracles.length > 1, "NOT_MULTIPLE_ORACLE_ADDRESS");
+        require(_oracles.length == _oracleDecimals.length, "INVALID_ORACLE_LENGTH");
+        require(_oracles.length == _isReverse.length, "INVALID_REVERSE_LENGTH");
+        for(uint256 i = 0; i < _oracles.length;) {
+            require(_oracles[i] != address(0), "ZERO_ORACLE_ADDRESS");
             require(_oracleDecimals[i] >= 6, "INVALID_ORACLE_DECIMALS");
             unchecked {
                 ++i;
             }
         }
 
-        oracle = _oracle;
+        oracles = _oracles;
         oracleDecimals = _oracleDecimals;
         isReverse = _isReverse;
     }
 
     /// @inheritdoc PriceFeed
     function _getPrice(uint256 maxAge, bool strict) internal virtual override view returns (uint256 price, bool stale) {
-        for(uint256 i = 0; i < oracle.length;) {
-            (uint256 oraclePrice, bool isStale) = _getSingleOraclePrice(id, maxAge, strict);
+        for(uint256 i = 0; i < oracles.length;) {
+            (uint256 oraclePrice, bool isStale) = _getSingleOraclePrice(i, maxAge, strict);
 
             if(i == 0) {
                 stale = isStale;
@@ -59,11 +59,11 @@ contract MultiSourceChainLinkPriceFeed is PriceFeed {
     }
 
     /// @dev Get individual oracle price formatted to be 18 decimals
-    /// @param id - id of ChainLink in oracle array
+    /// @param id - id of ChainLink in oracles array
     /// @param maxAge - maximum accepted age after which the price is considered stale
     /// @param strict - if true revert when price is negative, zero, or stale
     function _getSingleOraclePrice(uint256 id, uint256 maxAge, bool strict) internal virtual view returns (uint256 price, bool stale) {
-        (,int256 feedPrice,,uint256 updatedAt,) = AggregatorV3Interface(oracle[id]).latestRoundData();
+        (,int256 feedPrice,,uint256 updatedAt,) = AggregatorV3Interface(oracles[id]).latestRoundData();
 
         if(feedPrice < 0) {
             require(!strict, "NEGATIVE_PRICE");
@@ -72,7 +72,7 @@ contract MultiSourceChainLinkPriceFeed is PriceFeed {
 
         stale = block.timestamp - updatedAt > maxAge;
         price = Utils.convertDecimals(uint256(feedPrice), oracleDecimals[id], 18);
-        if(price > 0 && isReverse[i]) {
+        if(price > 0 && isReverse[id]) {
             price = 1e36 / price;
         }
     }
