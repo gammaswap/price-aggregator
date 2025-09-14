@@ -79,4 +79,74 @@ contract ChainLinkPriceFeedTest is Test {
         price = feed.getPrice(1002, true);
         assertEq(price, 3112892347);
     }
+
+    function testChainLinkGetPriceByTime() public {
+        oracle.setAnswer(1e8);
+
+        (uint256 price, bool ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertEq(price, 1e6);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(type(uint256).max, true);
+        assertEq(price, 1e6);
+        assertTrue(ok);
+
+        oracle.setAnswer(2e8);
+
+        (price, ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertEq(price, 2e6);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(type(uint256).max, true);
+        assertEq(price, 2e6);
+        assertTrue(ok);
+
+        oracle.setAnswer(-int256(1));
+        (price, ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertEq(price, 0);
+        assertFalse(ok);
+
+        vm.expectRevert("NEGATIVE_PRICE");
+        feed.getPriceByTime(type(uint256).max, true);
+
+        oracle.setAnswer(311289234796);
+        (price, ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        vm.warp(1000);
+
+        (price, ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(type(uint256).max, true);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(1000, true);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(1000, false);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByTime(1000 - 2, true);
+
+        (price, ok) = feed.getPriceByTime(1000 - 2, false);
+        assertEq(price, 3112892347);
+        assertFalse(ok);
+
+        vm.warp(1002);
+
+        (price, ok) = feed.getPriceByTime(1002, false);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(1002, true);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+    }
 }
