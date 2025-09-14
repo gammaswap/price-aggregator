@@ -5,6 +5,8 @@ import 'forge-std/Test.sol';
 import "../contracts/TestChainLinkOracle.sol";
 import "../contracts/TestMultiSourceChainLinkPriceFeed.sol";
 import "../../contracts/feeds/MultiSourceChainLinkPriceFeed.sol";
+import "../../contracts/interfaces/IHeartbeatStore.sol";
+import {PriceAggregator} from "../../contracts/PriceAggregator.sol";
 
 contract MultiSourceChainLinkPriceFeedTest is Test {
 
@@ -17,6 +19,8 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
     bool[] public mIsReverse;
 
     TestMultiSourceChainLinkPriceFeed feed;
+
+    IHeartbeatStore heartbeatStore;
 
     function setUp() public {
         oracle1 = new TestChainLinkOracle();
@@ -35,7 +39,9 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         mOracleDecimals[1] = 6;
         mOracleDecimals[2] = 18;
 
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, mOracles, mOracleDecimals, mIsReverse);
+        heartbeatStore = IHeartbeatStore(address(new PriceAggregator(address(0))));
+
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, mOracles, mOracleDecimals, mIsReverse, address(heartbeatStore));
     }
 
     function testBTCUSD_ETHUSD_PriceFeed() public {
@@ -60,7 +66,7 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         isReverse[0] = false;
         isReverse[1] = true;
 
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 18, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 18, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         uint256 price = feed.getPrice(type(uint256).max, false);
         assertApproxEqRel(price,uint256(btcUsdPx)*1e18/uint256(ethUsdPx),1e12);
@@ -83,38 +89,38 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         bool[] memory isReverse = new bool[](1);
 
         vm.expectRevert("NOT_MULTIPLE_ORACLE_ADDRESS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracles = new address[](1);
         vm.expectRevert("NOT_MULTIPLE_ORACLE_ADDRESS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracles = new address[](2);
         vm.expectRevert("INVALID_ORACLE_LENGTH");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracleDecimals = new uint8[](2);
         vm.expectRevert("INVALID_REVERSE_LENGTH");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         isReverse = new bool[](2);
         vm.expectRevert("ZERO_ORACLE_ADDRESS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracles[0] = address(1);
         vm.expectRevert("INVALID_ORACLE_DECIMALS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracleDecimals[0] = 6;
         vm.expectRevert("ZERO_ORACLE_ADDRESS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracles[1] = address(2);
         vm.expectRevert("INVALID_ORACLE_DECIMALS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracleDecimals[1] = 6;
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         for(uint256 i = 0; i < oracles.length; i++) {
             assertEq(oracles[i],address(uint160(i + 1)));

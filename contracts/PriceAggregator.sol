@@ -8,15 +8,21 @@ import '@gammaswap/v1-periphery/contracts/base/Transfers.sol';
 
 import "./interfaces/IPriceAggregator.sol";
 import "./interfaces/IPriceFeed.sol";
+import "./interfaces/IHeartbeatStore.sol";
 
 /// @title Price Aggregator contract
 /// @author Daniel D. Alcarraz (https://github.com/0xDanr)
 /// @notice Used to get prices from multiple sources (e.g. oracles, AMMs, etc.) defined as PriceFeed contracts
 /// @dev PriceFeeds can implement Oracles, AMMs, or any combination or logic to determine a price
-contract PriceAggregator is IPriceAggregator, Initializable, UUPSUpgradeable, Transfers, Ownable2Step {
+contract PriceAggregator is IPriceAggregator, IHeartbeatStore, Initializable, UUPSUpgradeable, Transfers, Ownable2Step {
 
     /// @inheritdoc IPriceAggregator
     mapping(uint16 => address) public override getPriceFeed;
+
+    /// @inheritdoc IHeartbeatStore
+    mapping(uint16 => uint256) public override getHeartbeat;
+
+    uint256[50] private __gap;
 
     /// @dev Initialize `WETH` address to Wrapped Ethereum contract
     constructor(address _WETH) Transfers(_WETH) {
@@ -68,15 +74,37 @@ contract PriceAggregator is IPriceAggregator, Initializable, UUPSUpgradeable, Tr
         emit RemovePriceFeed(feedId, feed);
     }
 
+    /// @inheritdoc IHeartbeatStore
+    function setHeartbeat(uint16 feedId, uint256 heartbeat) external virtual override onlyOwner {
+        getHeartbeat[feedId] = heartbeat;
+    }
+
     /// @inheritdoc IPriceAggregator
     function getPrice(uint16 feedId, uint256 maxAge, bool strict) external virtual override view returns (uint256) {
+        address feed = _getPriceFeed(feedId);
+        return IPriceFeed(feed).getPrice(maxAge, strict);
+    }
+
+    /// @inheritdoc IPriceAggregator
+    function getPriceByTime(uint16 feedId, uint256 maxSeconds, bool strict) external virtual override view returns (uint256, bool) {
+        address feed = _getPriceFeed(feedId);
+        return IPriceFeed(feed).getPriceByTime(maxSeconds, strict);
+    }
+
+    /// @inheritdoc IPriceAggregator
+    function getPriceByHeartbeats(uint16 feedId, uint256 maxHeartbeats, bool strict) external virtual override view returns (uint256, bool) {
+        address feed = _getPriceFeed(feedId);
+        return IPriceFeed(feed).getPriceByHeartbeats(maxHeartbeats, strict);
+    }
+
+    function _getPriceFeed(uint16 feedId) internal view returns(address) {
         require(feedId > 0, "ZERO_ID");
 
         address feed = getPriceFeed[feedId];
 
         require(feed != address(0), "ZERO_ADDRESS");
 
-        return IPriceFeed(feed).getPrice(maxAge, strict);
+        return feed;
     }
 
     function getGammaPoolAddress(address, uint16) internal virtual override view returns(address) {

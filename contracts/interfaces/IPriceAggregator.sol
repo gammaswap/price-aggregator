@@ -42,4 +42,20 @@ interface IPriceAggregator {
     /// @param strict - if set to true revert when the price is stale or the price is non positive
     /// @return price - price from price feed identified by feedId
     function getPrice(uint16 feedId, uint256 maxAge, bool strict) external view returns (uint256 price);
+
+    /// @dev Get price from PriceFeed identified by id, price is stale if it was last updated more than `maxSeconds` ago
+    /// @param feedId - ID that identifies price feed to get price from
+    /// @param maxSeconds - maximum age in seconds to determine if price is stale
+    /// @param strict - if set to true revert when the price is stale or the price is non positive
+    /// @return price - price from price feed identified by feedId
+    /// @return ok - false if has an issue (e.g. stale)
+    function getPriceByTime(uint16 feedId, uint256 maxSeconds, bool strict) external view returns (uint256 price, bool ok);
+
+    /// @dev Get price from PriceFeed identified by id, price is stale if it was last updated more than `maxHeartbeats` ago
+    /// @param feedId - ID that identifies price feed to get price from
+    /// @param maxHeartbeats - maximum age in heartbeats to determine if price is stale
+    /// @param strict - if set to true revert when the price is stale or the price is non positive
+    /// @return price - price from price feed identified by feedId
+    /// @return ok - false if has an issue (e.g. stale)
+    function getPriceByHeartbeats(uint16 feedId, uint256 maxHeartbeats, bool strict) external view returns (uint256 price, bool ok);
 }

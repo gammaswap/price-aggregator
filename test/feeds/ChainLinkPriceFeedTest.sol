@@ -12,15 +12,15 @@ contract ChainLinkPriceFeedTest is Test {
 
     function setUp() public {
         oracle = new TestChainLinkOracle();
-        feed = new ChainLinkPriceFeed(1, 6, address(oracle), 8);
+        feed = new ChainLinkPriceFeed(1, 6, address(oracle), 8, address(0));
     }
 
     function testChainLinkConstructorErrors() public {
         vm.expectRevert("ZERO_ADDRESS");
-        feed = new ChainLinkPriceFeed(1, 6, address(0), 5);
+        feed = new ChainLinkPriceFeed(1, 6, address(0), 5, address(0));
 
         vm.expectRevert("INVALID_ORACLE_DECIMALS");
-        feed = new ChainLinkPriceFeed(1, 6, address(oracle), 5);
+        feed = new ChainLinkPriceFeed(1, 6, address(oracle), 5, address(0));
     }
 
     function testChainLinkGetPrice() public {

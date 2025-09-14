@@ -9,16 +9,16 @@ contract PriceFeedTest is Test {
     TestPriceFeed feed;
 
     function setUp() public {
-        feed = new TestPriceFeed(1, 6);
+        feed = new TestPriceFeed(1, 6, address(0));
         feed.setPrice(1e18);
     }
 
     function testConstructorErrors() public {
         vm.expectRevert("INVALID_FEED_ID");
-        feed = new TestPriceFeed(0, 6);
+        feed = new TestPriceFeed(0, 6, address(0));
 
         vm.expectRevert("INVALID_DECIMALS");
-        feed = new TestPriceFeed(1, 5);
+        feed = new TestPriceFeed(1, 5, address(0));
     }
 
     function testGetPrice() public {

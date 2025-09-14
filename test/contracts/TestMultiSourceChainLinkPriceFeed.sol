@@ -5,8 +5,8 @@ import "../../contracts/feeds/MultiSourceChainLinkPriceFeed.sol";
 
 contract TestMultiSourceChainLinkPriceFeed is MultiSourceChainLinkPriceFeed {
     constructor(uint16 _feedId, uint8 _decimals, address[] memory _oracles, uint8[] memory _oracleDecimals,
-        bool[] memory _isReverse) MultiSourceChainLinkPriceFeed(_feedId, _decimals, _oracles, _oracleDecimals,
-        _isReverse) {
+        bool[] memory _isReverse, address _heartbeatStore) MultiSourceChainLinkPriceFeed(_feedId, _decimals, _oracles,
+        _oracleDecimals, _isReverse, _heartbeatStore) {
     }
 
     function setReverse(uint256 id, bool _isReverse) public {
