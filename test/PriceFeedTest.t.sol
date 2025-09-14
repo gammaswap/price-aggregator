@@ -3,13 +3,16 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 import "./contracts/TestPriceFeed.sol";
+import "./contracts/TestHeartbeatStore.sol";
 
 contract PriceFeedTest is Test {
 
     TestPriceFeed feed;
+    TestHeartbeatStore heartbeatStore;
 
     function setUp() public {
-        feed = new TestPriceFeed(1, 6, address(0));
+        heartbeatStore = new TestHeartbeatStore();
+        feed = new TestPriceFeed(1, 6, address(heartbeatStore));
         feed.setPrice(1e18);
     }
 
@@ -44,6 +47,34 @@ contract PriceFeedTest is Test {
         assertEq(price, 0);
     }
 
+    function testGetPriceByTime() public {
+        (uint256 price, bool ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(0,true);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        feed.setStale(true);
+
+        (price, ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 1e18);
+        assertFalse(ok);
+
+        feed.setStale(false);
+
+        (price, ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        feed.setPrice(0);
+
+        (price, ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 0);
+        assertFalse(ok);
+    }
+
     function testGetPriceStrict() public {
         feed.setStale(true);
 
@@ -63,5 +94,55 @@ contract PriceFeedTest is Test {
         assertEq(price, 0);
     }
 
+
+    function testGetPriceByTimeStrict() public {
+        feed.setStale(true);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByTime(0,true);
+
+        (uint256 price, bool ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 1e18);
+        assertFalse(ok);
+
+        feed.setStale(false);
+        feed.setPrice(0);
+
+        vm.expectRevert("INVALID_PRICE");
+        feed.getPriceByTime(0,true);
+
+        (price, ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 0);
+        assertFalse(ok);
+    }
+
+    // TODO: Finish this section
+    function testGetPriceByHeartbeats() public {
+        (uint256 price, bool ok) = feed.getPriceByHeartbeats(0,false);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        /*(price, ok) = feed.getPriceByTime(0,true);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        feed.setStale(true);
+
+        (price, ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 1e18);
+        assertFalse(ok);
+
+        feed.setStale(false);
+
+        (price, ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        feed.setPrice(0);
+
+        (price, ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 0);
+        assertFalse(ok);/**/
+    }
 }
 
