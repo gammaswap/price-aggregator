@@ -49,9 +49,12 @@ abstract contract PriceFeed is IPriceFeed {
 
     /// @inheritdoc IPriceFeed
     function getPriceByHeartbeats(uint256 maxHeartbeats, bool strict) external virtual override view returns (uint256 price, bool ok) {
+        if(maxHeartbeats > 100e3) maxHeartbeats = 100e3; // capped at 100 heartbeats
+
         bool stale;
         uint256 heartbeat = IHeartbeatStore(heartbeatStore).getHeartbeat(feedId);
-        uint256 maxAge = maxHeartbeats * heartbeat / 1000 + 1;
+        uint256 maxAge = maxHeartbeats * heartbeat / 1000;
+
         (price, stale) = _getPrice(maxAge, strict);
         ok = _isPriceOk(price, stale, strict);
     }
