@@ -118,6 +118,7 @@ contract PriceFeedTest is Test {
 
     // TODO: Finish this section
     function testGetPriceByHeartbeats() public {
+        assertEq(feed.heartbeatStore(), address(heartbeatStore));
         (uint256 price, bool ok) = feed.getPriceByHeartbeats(0,false);
         assertEq(price, 1e18);
         assertTrue(ok);

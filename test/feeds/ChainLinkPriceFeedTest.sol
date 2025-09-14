@@ -4,23 +4,26 @@ pragma solidity ^0.8.0;
 import 'forge-std/Test.sol';
 import "../contracts/TestChainLinkOracle.sol";
 import "../../contracts/feeds/ChainLinkPriceFeed.sol";
+import "../contracts/TestHeartbeatStore.sol";
 
 contract ChainLinkPriceFeedTest is Test {
 
     TestChainLinkOracle oracle;
     ChainLinkPriceFeed feed;
+    TestHeartbeatStore heartbeatStore;
 
     function setUp() public {
         oracle = new TestChainLinkOracle();
-        feed = new ChainLinkPriceFeed(1, 6, address(oracle), 8, address(0));
+        heartbeatStore = new TestHeartbeatStore();
+        feed = new ChainLinkPriceFeed(1, 6, address(oracle), 8, address(heartbeatStore));
     }
 
     function testChainLinkConstructorErrors() public {
         vm.expectRevert("ZERO_ADDRESS");
-        feed = new ChainLinkPriceFeed(1, 6, address(0), 5, address(0));
+        feed = new ChainLinkPriceFeed(1, 6, address(0), 5, address(heartbeatStore));
 
         vm.expectRevert("INVALID_ORACLE_DECIMALS");
-        feed = new ChainLinkPriceFeed(1, 6, address(oracle), 5, address(0));
+        feed = new ChainLinkPriceFeed(1, 6, address(oracle), 5, address(heartbeatStore));
     }
 
     function testChainLinkGetPrice() public {
