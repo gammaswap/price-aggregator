@@ -139,6 +139,24 @@ contract PriceFeedAggregatorTest is Test {
         price = agg.getPrice(1, type(uint256).max, false);
         assertEq(price, 2e18);
     }
+
+    function testAggGetPriceByTime() public {
+        vm.expectRevert("ZERO_ID");
+        agg.getPriceByTime(0, type(uint256).max, false);
+
+        vm.expectRevert("ZERO_ADDRESS");
+        agg.getPriceByTime(2, type(uint256).max, false);
+
+        (uint256 price, bool ok) = agg.getPriceByTime(1, type(uint256).max, false);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        feed.setPrice(2e18);
+
+        (price, ok) = agg.getPriceByTime(1, type(uint256).max, false);
+        assertEq(price, 2e18);
+        assertTrue(ok);
+    }
 }
 
 contract TestPriceFeed2 is IPriceFeed {
