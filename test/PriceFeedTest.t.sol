@@ -116,34 +116,40 @@ contract PriceFeedTest is Test {
         assertFalse(ok);
     }
 
-    // TODO: Finish this section
     function testGetPriceByHeartbeats() public {
         assertEq(feed.heartbeatStore(), address(heartbeatStore));
+
+        assertEq(heartbeatStore.getHeartbeat(feed.feedId()), 0);
+
+        heartbeatStore.setHeartbeat(feed.feedId(), 1000);
+
+        assertEq(heartbeatStore.getHeartbeat(feed.feedId()), 1000);
+
         (uint256 price, bool ok) = feed.getPriceByHeartbeats(0,false);
         assertEq(price, 1e18);
         assertTrue(ok);
 
-        /*(price, ok) = feed.getPriceByTime(0,true);
+        (price, ok) = feed.getPriceByHeartbeats(0,true);
         assertEq(price, 1e18);
         assertTrue(ok);
 
         feed.setStale(true);
 
-        (price, ok) = feed.getPriceByTime(0,false);
+        (price, ok) = feed.getPriceByHeartbeats(0,false);
         assertEq(price, 1e18);
         assertFalse(ok);
 
         feed.setStale(false);
 
-        (price, ok) = feed.getPriceByTime(0,false);
+        (price, ok) = feed.getPriceByHeartbeats(0,false);
         assertEq(price, 1e18);
         assertTrue(ok);
 
         feed.setPrice(0);
 
-        (price, ok) = feed.getPriceByTime(0,false);
+        (price, ok) = feed.getPriceByHeartbeats(0,false);
         assertEq(price, 0);
-        assertFalse(ok);/**/
+        assertFalse(ok);
     }
 }
 

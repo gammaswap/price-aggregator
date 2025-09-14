@@ -76,6 +76,7 @@ contract PriceAggregator is IPriceAggregator, IHeartbeatStore, Initializable, UU
 
     /// @inheritdoc IHeartbeatStore
     function setHeartbeat(uint16 feedId, uint256 heartbeat) external virtual override onlyOwner {
+        require(feedId > 0, "ZERO_ID");
         getHeartbeat[feedId] = heartbeat;
     }
 

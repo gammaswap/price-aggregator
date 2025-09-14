@@ -20,6 +20,35 @@ contract PriceFeedAggregatorTest is Test {
         agg.addPriceFeed(address(feed));
     }
 
+    function testSetHeartbeat() public {
+        vm.prank(address(1));
+        vm.expectRevert("Ownable: caller is not the owner");
+        agg.setHeartbeat(1, 2000);
+
+        vm.prank(agg.owner());
+        vm.expectRevert("ZERO_ID");
+        agg.setHeartbeat(0, 2000);
+
+        vm.prank(agg.owner());
+        agg.setHeartbeat(1, 2000);
+        assertEq(agg.getHeartbeat(1), 2000);
+
+        vm.prank(agg.owner());
+        agg.setHeartbeat(2, 3000);
+        assertEq(agg.getHeartbeat(1), 2000);
+        assertEq(agg.getHeartbeat(2), 3000);
+
+        vm.prank(agg.owner());
+        agg.setHeartbeat(1, 4000);
+        assertEq(agg.getHeartbeat(1), 4000);
+        assertEq(agg.getHeartbeat(2), 3000);
+
+        vm.prank(agg.owner());
+        agg.setHeartbeat(2, 0);
+        assertEq(agg.getHeartbeat(1), 4000);
+        assertEq(agg.getHeartbeat(2), 0);
+    }
+
     function testDecimalConversions() public {
         (uint128 value, uint8 fromDecimals, uint8 toDecimals) = (0, 13, 0);
         fromDecimals = uint8(bound(fromDecimals, 6, 18));
@@ -154,6 +183,24 @@ contract PriceFeedAggregatorTest is Test {
         feed.setPrice(2e18);
 
         (price, ok) = agg.getPriceByTime(1, type(uint256).max, false);
+        assertEq(price, 2e18);
+        assertTrue(ok);
+    }
+
+    function testAggGetPriceByHeartbeats() public {
+        vm.expectRevert("ZERO_ID");
+        agg.getPriceByHeartbeats(0, type(uint256).max, false);
+
+        vm.expectRevert("ZERO_ADDRESS");
+        agg.getPriceByHeartbeats(2, type(uint256).max, false);
+
+        (uint256 price, bool ok) = agg.getPriceByHeartbeats(1, type(uint256).max, false);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        feed.setPrice(2e18);
+
+        (price, ok) = agg.getPriceByHeartbeats(1, type(uint256).max, false);
         assertEq(price, 2e18);
         assertTrue(ok);
     }
