@@ -32,21 +32,84 @@ contract PriceFeedAggregatorTest is Test {
         vm.prank(agg.owner());
         agg.setHeartbeat(1, 2000);
         assertEq(agg.getHeartbeat(1), 2000);
+        assertEq(agg.getHeartbeatByIndex(1, 0), 2000);
 
         vm.prank(agg.owner());
         agg.setHeartbeat(2, 3000);
         assertEq(agg.getHeartbeat(1), 2000);
         assertEq(agg.getHeartbeat(2), 3000);
+        assertEq(agg.getHeartbeatByIndex(1, 0), 2000);
+        assertEq(agg.getHeartbeatByIndex(2, 0), 3000);
 
         vm.prank(agg.owner());
         agg.setHeartbeat(1, 4000);
         assertEq(agg.getHeartbeat(1), 4000);
         assertEq(agg.getHeartbeat(2), 3000);
+        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
+        assertEq(agg.getHeartbeatByIndex(2, 0), 3000);
 
         vm.prank(agg.owner());
         agg.setHeartbeat(2, 0);
         assertEq(agg.getHeartbeat(1), 4000);
         assertEq(agg.getHeartbeat(2), 0);
+        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
+        assertEq(agg.getHeartbeatByIndex(2, 0), 0);
+    }
+
+
+    function testSetHeartbeatByIndex() public {
+        vm.prank(address(1));
+        vm.expectRevert("Ownable: caller is not the owner");
+        agg.setHeartbeatByIndex(1, 0,2000);
+
+        vm.prank(agg.owner());
+        vm.expectRevert("ZERO_ID");
+        agg.setHeartbeatByIndex(0, 0, 2000);
+
+        vm.prank(agg.owner());
+        agg.setHeartbeatByIndex(1, 0, 2000);
+        assertEq(agg.getHeartbeat(1), 2000);
+        assertEq(agg.getHeartbeatByIndex(1, 0), 2000);
+
+        vm.prank(agg.owner());
+        agg.setHeartbeatByIndex(2, 0,3000);
+        assertEq(agg.getHeartbeat(1), 2000);
+        assertEq(agg.getHeartbeat(2), 3000);
+        assertEq(agg.getHeartbeatByIndex(1, 0), 2000);
+        assertEq(agg.getHeartbeatByIndex(2, 0), 3000);
+
+        vm.prank(agg.owner());
+        agg.setHeartbeatByIndex(1, 0,4000);
+        assertEq(agg.getHeartbeat(1), 4000);
+        assertEq(agg.getHeartbeat(2), 3000);
+        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
+        assertEq(agg.getHeartbeatByIndex(2, 0), 3000);
+
+        vm.prank(agg.owner());
+        agg.setHeartbeatByIndex(2, 0,0);
+        assertEq(agg.getHeartbeat(1), 4000);
+        assertEq(agg.getHeartbeat(2), 0);
+        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
+        assertEq(agg.getHeartbeatByIndex(2, 0), 0);
+
+        vm.prank(agg.owner());
+        agg.setHeartbeatByIndex(2, 1,100);
+        assertEq(agg.getHeartbeat(1), 4000);
+        assertEq(agg.getHeartbeat(2), 0);
+        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
+        assertEq(agg.getHeartbeatByIndex(2, 0), 0);
+        assertEq(agg.getHeartbeatByIndex(1, 1), 0);
+        assertEq(agg.getHeartbeatByIndex(2, 1), 100);
+
+
+        vm.prank(agg.owner());
+        agg.setHeartbeatByIndex(1, 1,200);
+        assertEq(agg.getHeartbeat(1), 4000);
+        assertEq(agg.getHeartbeat(2), 0);
+        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
+        assertEq(agg.getHeartbeatByIndex(2, 0), 0);
+        assertEq(agg.getHeartbeatByIndex(1, 1), 200);
+        assertEq(agg.getHeartbeatByIndex(2, 1), 100);
     }
 
     function testDecimalConversions() public {
