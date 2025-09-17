@@ -20,7 +20,7 @@ contract PriceAggregator is IPriceAggregator, IHeartbeatStore, Initializable, UU
     mapping(uint16 => address) public override getPriceFeed;
 
     /// @inheritdoc IHeartbeatStore
-    mapping(uint16 => uint256) public override getHeartbeat;
+    mapping(uint16 => mapping(uint256 => uint256)) public override getHeartbeatByIndex;
 
     uint256[50] private __gap;
 
@@ -75,9 +75,21 @@ contract PriceAggregator is IPriceAggregator, IHeartbeatStore, Initializable, UU
     }
 
     /// @inheritdoc IHeartbeatStore
+    function getHeartbeat(uint16 feedId) external virtual override view returns(uint256) {
+        require(feedId > 0, "ZERO_ID");
+        return getHeartbeatByIndex[feedId][0];
+    }
+
+    /// @inheritdoc IHeartbeatStore
     function setHeartbeat(uint16 feedId, uint256 heartbeat) external virtual override onlyOwner {
         require(feedId > 0, "ZERO_ID");
-        getHeartbeat[feedId] = heartbeat;
+        getHeartbeatByIndex[feedId][0] = heartbeat;
+    }
+
+    /// @inheritdoc IHeartbeatStore
+    function setHeartbeatByIndex(uint16 feedId, uint256 index, uint256 heartbeat) external virtual override onlyOwner {
+        require(feedId > 0, "ZERO_ID");
+        getHeartbeatByIndex[feedId][index] = heartbeat;
     }
 
     /// @inheritdoc IPriceAggregator

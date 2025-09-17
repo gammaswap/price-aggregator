@@ -226,7 +226,7 @@ contract ChainLinkPriceFeedTest is Test {
 
         heartbeatStore.setHeartbeat(feed.feedId(), 1000);
 
-        assertEq(heartbeatStore.getHeartbeat(feed.feedId()), 1000); // zero heartbeat is a maxAge of 0 seconds
+        assertEq(heartbeatStore.getHeartbeat(feed.feedId()), 1000); // heartbeat is a maxAge of 1000 seconds
 
         (uint256 price, bool ok) = feed.getPriceByHeartbeats(type(uint256).max, false);
         assertEq(price, 1e6);

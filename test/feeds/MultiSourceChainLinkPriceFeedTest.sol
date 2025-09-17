@@ -6,7 +6,7 @@ import "../contracts/TestChainLinkOracle.sol";
 import "../contracts/TestMultiSourceChainLinkPriceFeed.sol";
 import "../../contracts/feeds/MultiSourceChainLinkPriceFeed.sol";
 import "../../contracts/interfaces/IHeartbeatStore.sol";
-import {PriceAggregator} from "../../contracts/PriceAggregator.sol";
+import { PriceAggregator } from "../../contracts/PriceAggregator.sol";
 
 contract MultiSourceChainLinkPriceFeedTest is Test {
 
@@ -41,7 +41,8 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
 
         heartbeatStore = IHeartbeatStore(address(new PriceAggregator(address(0))));
 
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, mOracles, mOracleDecimals, mIsReverse, address(heartbeatStore));
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, mOracles, mOracleDecimals,
+            mIsReverse, address(heartbeatStore));
     }
 
     function testBTCUSD_ETHUSD_PriceFeed() public {
@@ -66,13 +67,23 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         isReverse[0] = false;
         isReverse[1] = true;
 
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 18, oracles, oracleDecimals, isReverse, address(heartbeatStore));
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 18, oracles, oracleDecimals,
+            isReverse, address(heartbeatStore));
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 0, 1000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 0), 1000); // heartbeat is a maxAge of 1000 seconds
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 1, 1000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 1), 1000); // heartbeat is a maxAge of 1000 seconds
 
         uint256 price = feed.getPrice(type(uint256).max, false);
         assertApproxEqRel(price,uint256(btcUsdPx)*1e18/uint256(ethUsdPx),1e12);
 
         bool ok;
         (price, ok)= feed.getPriceByTime(type(uint256).max, false);
+        assertApproxEqRel(price,uint256(btcUsdPx)*1e18/uint256(ethUsdPx),1e12);
+
+        (price, ok)= feed.getPriceByHeartbeats(type(uint256).max, false);
         assertApproxEqRel(price,uint256(btcUsdPx)*1e18/uint256(ethUsdPx),1e12);
 
         oracle1.setAnswer(ethUsdPx);
@@ -87,6 +98,9 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         assertApproxEqRel(price,uint256(ethUsdPx)*1e18/uint256(btcUsdPx),1e12);
 
         (price, ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertApproxEqRel(price,uint256(ethUsdPx)*1e18/uint256(btcUsdPx),1e12);
+
+        (price, ok)= feed.getPriceByHeartbeats(type(uint256).max, false);
         assertApproxEqRel(price,uint256(ethUsdPx)*1e18/uint256(btcUsdPx),1e12);
     }
 
