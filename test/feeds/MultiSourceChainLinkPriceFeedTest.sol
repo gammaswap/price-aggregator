@@ -529,5 +529,110 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         (price, ok) = feed.getPriceByHeartbeats(1002, true);
         assertEq(price, uint256(3112892347)/4);
         assertTrue(ok);
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 0, 1000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 0), 1000); // heartbeat is a maxAge of 1000 seconds
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 1, 1002);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 1), 1002); // heartbeat is a maxAge of 1000 seconds
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 2, 1000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 2), 1000); // heartbeat is a maxAge of 1000 seconds
+
+        (price, ok) = feed.getPriceByHeartbeats(1002, false); // 100.2% or 1.002 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        vm.warp(1004);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByHeartbeats(1002, true);
+
+        (price, ok) = feed.getPriceByHeartbeats(1002, false); // 100.2% or 1.002 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertFalse(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 1, 2000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 1), 2000); // heartbeat is a maxAge of 1000 seconds
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        vm.warp(2000);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByHeartbeats(1004, true);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertFalse(ok);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByHeartbeats(2000-1, true);
+
+        (price, ok) = feed.getPriceByHeartbeats(2000-1, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertFalse(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(2000, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(2000, true); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        oracle1.setUpdatedAt(block.timestamp);
+        oracle3.setUpdatedAt(block.timestamp);
+
+        (price, ok) = feed.getPriceByHeartbeats(2000-1, true);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(2000-1, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, true);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        vm.warp(2008);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, true);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        vm.warp(2009);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByHeartbeats(1004, true);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false);
+        assertEq(price, uint256(3112892347)/4);
+        assertFalse(ok);
+
+        oracle2.setUpdatedAt(block.timestamp);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, true);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
     }
 }
