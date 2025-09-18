@@ -13,9 +13,6 @@ interface IPriceFeed {
     /// @dev decimals of price number returned by price feed
     function decimals() external view returns(uint8);
 
-    /// @dev Get address of contract storing the price feed's heartbeat
-    function heartbeatStore() external view returns(address);
-
     /// @dev Used by other contracts to get price from this price feed
     /// @param maxAge - maximum age in seconds to determine if price is stale
     /// @param strict - if set to true revert when the price is stale or the price is non positive

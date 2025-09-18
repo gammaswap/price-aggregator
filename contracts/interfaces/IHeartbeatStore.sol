@@ -7,25 +7,13 @@ pragma solidity ^0.8.0;
 /// @dev Hearbeat is stored in seconds
 interface IHeartbeatStore {
 
-    /// @dev Get heartbeat by feedId
-    /// @param feedId - ID that identifies price feed to get price from
-    /// @return heartbeat - max time elapsed in seconds before price feed updates
-    function getHeartbeat(uint16 feedId) external view returns(uint256 heartbeat);
+    /// @dev Get heartbeat by feed source address
+    /// @param feed - address of feed source
+    /// @return heartbeat - max time elapsed in seconds before source price feed updates
+    function getHeartbeat(address feed) external view returns(uint256 heartbeat);
 
-    /// @dev Set the heartbeat for a price feed identified by its feedId
-    /// @param feedId - ID that identifies price feed to get price from
-    /// @param heartbeat - max time elapsed in seconds before price feed updates
-    function setHeartbeat(uint16 feedId, uint256 heartbeat) external;
-
-    /// @dev Get heartbeat by feedId
-    /// @param feedId - ID that identifies price feed to get price from
-    /// @param index - heartbeat index for multi source price feeds (single source should always be 0)
-    /// @return heartbeat - max time elapsed in seconds before price feed updates
-    function getHeartbeatByIndex(uint16 feedId, uint256 index) external view returns(uint256 heartbeat);
-
-    /// @dev Set the heartbeat for a price feed identified by its feedId
-    /// @param feedId - ID that identifies price feed to get price from
-    /// @param index - heartbeat index for multi source price feeds (single source should always be 0)
-    /// @param heartbeat - max time elapsed in seconds before price feed updates
-    function setHeartbeatByIndex(uint16 feedId, uint256 index, uint256 heartbeat) external;
+    /// @dev Set the heartbeat of a feed source
+    /// @param feed - address of feed source
+    /// @param heartbeat - max time elapsed in seconds before source price feed updates
+    function setHeartbeat(address feed, uint256 heartbeat) external;
 }

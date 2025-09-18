@@ -14,7 +14,7 @@ contract PriceFeedAggregatorTest is Test {
     function setUp() public {
         agg = new PriceAggregator(address(0));
 
-        feed = new TestPriceFeed(1, 6, address(agg));
+        feed = new TestPriceFeed(1, 6);
         feed.setPrice(1e18);
 
         agg.addPriceFeed(address(feed));
@@ -23,93 +23,30 @@ contract PriceFeedAggregatorTest is Test {
     function testSetHeartbeat() public {
         vm.prank(address(1));
         vm.expectRevert("Ownable: caller is not the owner");
-        agg.setHeartbeat(1, 2000);
+        agg.setHeartbeat(address(1), 2000);
 
         vm.prank(agg.owner());
-        vm.expectRevert("ZERO_ID");
-        agg.setHeartbeat(0, 2000);
+        vm.expectRevert("ZERO_ADDRESS");
+        agg.setHeartbeat(address(0), 2000);
 
         vm.prank(agg.owner());
-        agg.setHeartbeat(1, 2000);
-        assertEq(agg.getHeartbeat(1), 2000);
-        assertEq(agg.getHeartbeatByIndex(1, 0), 2000);
+        agg.setHeartbeat(address(1), 2000);
+        assertEq(agg.getHeartbeat(address(1)), 2000);
 
         vm.prank(agg.owner());
-        agg.setHeartbeat(2, 3000);
-        assertEq(agg.getHeartbeat(1), 2000);
-        assertEq(agg.getHeartbeat(2), 3000);
-        assertEq(agg.getHeartbeatByIndex(1, 0), 2000);
-        assertEq(agg.getHeartbeatByIndex(2, 0), 3000);
+        agg.setHeartbeat(address(2), 3000);
+        assertEq(agg.getHeartbeat(address(1)), 2000);
+        assertEq(agg.getHeartbeat(address(2)), 3000);
 
         vm.prank(agg.owner());
-        agg.setHeartbeat(1, 4000);
-        assertEq(agg.getHeartbeat(1), 4000);
-        assertEq(agg.getHeartbeat(2), 3000);
-        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
-        assertEq(agg.getHeartbeatByIndex(2, 0), 3000);
+        agg.setHeartbeat(address(1), 4000);
+        assertEq(agg.getHeartbeat(address(1)), 4000);
+        assertEq(agg.getHeartbeat(address(2)), 3000);
 
         vm.prank(agg.owner());
-        agg.setHeartbeat(2, 0);
-        assertEq(agg.getHeartbeat(1), 4000);
-        assertEq(agg.getHeartbeat(2), 0);
-        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
-        assertEq(agg.getHeartbeatByIndex(2, 0), 0);
-    }
-
-
-    function testSetHeartbeatByIndex() public {
-        vm.prank(address(1));
-        vm.expectRevert("Ownable: caller is not the owner");
-        agg.setHeartbeatByIndex(1, 0,2000);
-
-        vm.prank(agg.owner());
-        vm.expectRevert("ZERO_ID");
-        agg.setHeartbeatByIndex(0, 0, 2000);
-
-        vm.prank(agg.owner());
-        agg.setHeartbeatByIndex(1, 0, 2000);
-        assertEq(agg.getHeartbeat(1), 2000);
-        assertEq(agg.getHeartbeatByIndex(1, 0), 2000);
-
-        vm.prank(agg.owner());
-        agg.setHeartbeatByIndex(2, 0,3000);
-        assertEq(agg.getHeartbeat(1), 2000);
-        assertEq(agg.getHeartbeat(2), 3000);
-        assertEq(agg.getHeartbeatByIndex(1, 0), 2000);
-        assertEq(agg.getHeartbeatByIndex(2, 0), 3000);
-
-        vm.prank(agg.owner());
-        agg.setHeartbeatByIndex(1, 0,4000);
-        assertEq(agg.getHeartbeat(1), 4000);
-        assertEq(agg.getHeartbeat(2), 3000);
-        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
-        assertEq(agg.getHeartbeatByIndex(2, 0), 3000);
-
-        vm.prank(agg.owner());
-        agg.setHeartbeatByIndex(2, 0,0);
-        assertEq(agg.getHeartbeat(1), 4000);
-        assertEq(agg.getHeartbeat(2), 0);
-        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
-        assertEq(agg.getHeartbeatByIndex(2, 0), 0);
-
-        vm.prank(agg.owner());
-        agg.setHeartbeatByIndex(2, 1,100);
-        assertEq(agg.getHeartbeat(1), 4000);
-        assertEq(agg.getHeartbeat(2), 0);
-        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
-        assertEq(agg.getHeartbeatByIndex(2, 0), 0);
-        assertEq(agg.getHeartbeatByIndex(1, 1), 0);
-        assertEq(agg.getHeartbeatByIndex(2, 1), 100);
-
-
-        vm.prank(agg.owner());
-        agg.setHeartbeatByIndex(1, 1,200);
-        assertEq(agg.getHeartbeat(1), 4000);
-        assertEq(agg.getHeartbeat(2), 0);
-        assertEq(agg.getHeartbeatByIndex(1, 0), 4000);
-        assertEq(agg.getHeartbeatByIndex(2, 0), 0);
-        assertEq(agg.getHeartbeatByIndex(1, 1), 200);
-        assertEq(agg.getHeartbeatByIndex(2, 1), 100);
+        agg.setHeartbeat(address(2), 0);
+        assertEq(agg.getHeartbeat(address(1)), 4000);
+        assertEq(agg.getHeartbeat(address(2)), 0);
     }
 
     function testDecimalConversions() public {
@@ -139,17 +76,17 @@ contract PriceFeedAggregatorTest is Test {
         vm.expectRevert("ZERO_ADDRESS");
         agg.addPriceFeed(address(0));
 
-        TestPriceFeed2 feed0 = new TestPriceFeed2(0, 6, address(agg));
+        TestPriceFeed2 feed0 = new TestPriceFeed2(0, 6);
 
         vm.expectRevert("ZERO_ID");
         agg.addPriceFeed(address(feed0));
 
-        TestPriceFeed2 feed1 = new TestPriceFeed2(1, 6, address(agg));
+        TestPriceFeed2 feed1 = new TestPriceFeed2(1, 6);
 
         vm.expectRevert("FEED_ID_UNAVAILABLE");
         agg.addPriceFeed(address(feed1));
 
-        TestPriceFeed2 feed2 = new TestPriceFeed2(2, 6, address(agg));
+        TestPriceFeed2 feed2 = new TestPriceFeed2(2, 6);
 
         vm.prank(address(1));
         vm.expectRevert("Ownable: caller is not the owner");
@@ -166,12 +103,12 @@ contract PriceFeedAggregatorTest is Test {
         vm.expectRevert("ZERO_ADDRESS");
         agg.updatePriceFeed(1, address(0));
 
-        TestPriceFeed2 feed0 = new TestPriceFeed2(0, 6, address(agg));
+        TestPriceFeed2 feed0 = new TestPriceFeed2(0, 6);
 
         vm.expectRevert("WRONG_FEED");
         agg.updatePriceFeed(1, address(feed0));
 
-        TestPriceFeed2 feed1 = new TestPriceFeed2(1, 6, address(agg));
+        TestPriceFeed2 feed1 = new TestPriceFeed2(1, 6);
         vm.expectRevert("WRONG_FEED");
         agg.updatePriceFeed(2, address(feed1));
 
@@ -181,7 +118,7 @@ contract PriceFeedAggregatorTest is Test {
         agg.updatePriceFeed(1, address(feed));
         assertEq(agg.getPriceFeed(1), address(feed));
 
-        TestPriceFeed2 feed2 = new TestPriceFeed2(2, 6, address(agg));
+        TestPriceFeed2 feed2 = new TestPriceFeed2(2, 6);
 
         vm.expectRevert("WRONG_FEED");
         agg.updatePriceFeed(1, address(feed2));
@@ -273,12 +210,10 @@ contract TestPriceFeed2 is IPriceFeed {
 
     uint16 public override feedId;
     uint8 public override decimals;
-    address public override heartbeatStore;
 
-    constructor(uint16 _feedId, uint8 _decimals, address _heartbeatStore) {
+    constructor(uint16 _feedId, uint8 _decimals) {
         feedId = _feedId;
         decimals = _decimals;
-        heartbeatStore = _heartbeatStore;
     }
 
     function getPrice(uint256, bool) external override view returns(uint256) {

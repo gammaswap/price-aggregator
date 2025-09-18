@@ -2,13 +2,17 @@
 pragma solidity ^0.8.0;
 
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-import "./base/PriceFeed.sol";
+import "../interfaces/IHeartbeatStore.sol";
 import "../libraries/Utils.sol";
+import "./base/PriceFeed.sol";
 
 /// @title Multi-Source ChainLink Price Feed
 /// @author Daniel D. Alcarraz (https://github.com/0xDanr)
 /// @notice PriceFeed implementation for Oracle using multiple ChainLink price feeds
 contract MultiSourceChainLinkPriceFeed is PriceFeed {
+
+    /// @dev address holding heartbeat for this PriceFeed
+    address immutable public heartbeatStore;
 
     /// @dev decimals of price returned by ChainLink price feed
     uint8[] public oracleDecimals;
@@ -21,7 +25,7 @@ contract MultiSourceChainLinkPriceFeed is PriceFeed {
 
     /// @dev Initialize decimals, oracles, oracle decimals, and heartbeatStore
     constructor(uint16 _feedId, uint8 _decimals, address[] memory _oracles, uint8[] memory _oracleDecimals,
-        bool[] memory _isReverse, address _heartbeatStore) PriceFeed(_feedId, _decimals, _heartbeatStore) {
+        bool[] memory _isReverse, address _heartbeatStore) PriceFeed(_feedId, _decimals) {
         require(_oracles.length > 1, "NOT_MULTIPLE_ORACLE_ADDRESS");
         require(_oracles.length == _oracleDecimals.length, "INVALID_ORACLE_LENGTH");
         require(_oracles.length == _isReverse.length, "INVALID_REVERSE_LENGTH");
@@ -36,6 +40,12 @@ contract MultiSourceChainLinkPriceFeed is PriceFeed {
         oracles = _oracles;
         oracleDecimals = _oracleDecimals;
         isReverse = _isReverse;
+        heartbeatStore = _heartbeatStore;
+    }
+
+    /// @inheritdoc PriceFeed
+    function _getHeartbeat() internal virtual override view returns (uint256) {
+        return 0;
     }
 
     /// @inheritdoc IPriceFeed
@@ -54,11 +64,13 @@ contract MultiSourceChainLinkPriceFeed is PriceFeed {
     /// @return stale - true if price was updated more than maxHeartbeats ago
     function _getPriceByHeartbeats(uint256 maxHeartbeats, bool strict) internal virtual view returns (uint256 price, bool stale) {
         address _heartbeatStore = heartbeatStore;
-        for(uint256 i = 0; i < oracles.length;) {
-            uint256 heartbeat = IHeartbeatStore(_heartbeatStore).getHeartbeatByIndex(feedId, i);
-            uint256 maxAge = maxHeartbeats * heartbeat / 1000;
+        address[] memory _oracles = oracles;
+        uint8[] memory _oracleDecimals = oracleDecimals;
+        bool[] memory _isReverse = isReverse;
+        for(uint256 i = 0; i < _oracles.length;) {
+            uint256 maxAge = maxHeartbeats * IHeartbeatStore(_heartbeatStore).getHeartbeat(_oracles[i]) / 1000;
 
-            (uint256 oraclePrice, bool isStale) = _getSingleOraclePrice(i, maxAge, strict);
+            (uint256 oraclePrice, bool isStale) = _getSingleOraclePrice(_oracles[i], _oracleDecimals[i], _isReverse[i], maxAge, strict);
 
             if(i == 0) {
                 stale = isStale;
@@ -78,8 +90,11 @@ contract MultiSourceChainLinkPriceFeed is PriceFeed {
 
     /// @inheritdoc PriceFeed
     function _getPrice(uint256 maxAge, bool strict) internal virtual override view returns (uint256 price, bool stale) {
-        for(uint256 i = 0; i < oracles.length;) {
-            (uint256 oraclePrice, bool isStale) = _getSingleOraclePrice(i, maxAge, strict);
+        address[] memory _oracles = oracles;
+        uint8[] memory _oracleDecimals = oracleDecimals;
+        bool[] memory _isReverse = isReverse;
+        for(uint256 i = 0; i < _oracles.length;) {
+            (uint256 oraclePrice, bool isStale) = _getSingleOraclePrice(_oracles[i], _oracleDecimals[i], _isReverse[i], maxAge, strict);
 
             if(i == 0) {
                 stale = isStale;
@@ -98,13 +113,15 @@ contract MultiSourceChainLinkPriceFeed is PriceFeed {
     }
 
     /// @dev Get individual oracle price formatted to be 18 decimals
-    /// @param id - id of ChainLink in oracles array
+    /// @param _oracle - id of ChainLink in oracles array
+    /// @param _oracleDecimals - decimals of price returned by ChainLink oracle
+    /// @param _isReverse - true if should use reciprocal of oracle's price
     /// @param maxAge - maximum accepted age after which the price is considered stale
     /// @param strict - if true revert when price is negative, zero, or stale
     /// @return price - price from oracle normalized to 18 decimals and reversed if necessary
     /// @return stale - true if price was updated more than maxHeartbeats ago
-    function _getSingleOraclePrice(uint256 id, uint256 maxAge, bool strict) internal virtual view returns (uint256 price, bool stale) {
-        (,int256 feedPrice,,uint256 updatedAt,) = AggregatorV3Interface(oracles[id]).latestRoundData();
+    function _getSingleOraclePrice(address _oracle, uint8 _oracleDecimals, bool _isReverse, uint256 maxAge, bool strict) internal virtual view returns (uint256 price, bool stale) {
+        (,int256 feedPrice,,uint256 updatedAt,) = AggregatorV3Interface(_oracle).latestRoundData();
 
         if(feedPrice < 0) {
             require(!strict, "NEGATIVE_PRICE");
@@ -112,8 +129,8 @@ contract MultiSourceChainLinkPriceFeed is PriceFeed {
         }
 
         stale = block.timestamp - updatedAt > maxAge;
-        price = Utils.convertDecimals(uint256(feedPrice), oracleDecimals[id], 18);
-        if(price > 0 && isReverse[id]) {
+        price = Utils.convertDecimals(uint256(feedPrice), _oracleDecimals, 18);
+        if(price > 0 && _isReverse) {
             price = 1e36 / price;
         }
     }

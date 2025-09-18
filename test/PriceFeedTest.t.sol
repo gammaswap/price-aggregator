@@ -12,16 +12,16 @@ contract PriceFeedTest is Test {
 
     function setUp() public {
         heartbeatStore = new TestHeartbeatStore();
-        feed = new TestPriceFeed(1, 6, address(heartbeatStore));
+        feed = new TestPriceFeed(1, 6);
         feed.setPrice(1e18);
     }
 
     function testConstructorErrors() public {
         vm.expectRevert("INVALID_FEED_ID");
-        feed = new TestPriceFeed(0, 6, address(0));
+        feed = new TestPriceFeed(0, 6);
 
         vm.expectRevert("INVALID_DECIMALS");
-        feed = new TestPriceFeed(1, 5, address(0));
+        feed = new TestPriceFeed(1, 5);
     }
 
     function testGetPrice() public {
@@ -117,14 +117,6 @@ contract PriceFeedTest is Test {
     }
 
     function testGetPriceByHeartbeats() public {
-        assertEq(feed.heartbeatStore(), address(heartbeatStore));
-
-        assertEq(heartbeatStore.getHeartbeat(feed.feedId()), 0);
-
-        heartbeatStore.setHeartbeat(feed.feedId(), 1000);
-
-        assertEq(heartbeatStore.getHeartbeat(feed.feedId()), 1000);
-
         (uint256 price, bool ok) = feed.getPriceByHeartbeats(0,false);
         assertEq(price, 1e18);
         assertTrue(ok);

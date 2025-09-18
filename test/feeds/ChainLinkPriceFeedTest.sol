@@ -156,7 +156,7 @@ contract ChainLinkPriceFeedTest is Test {
     function testChainLinkGetPriceByZeroHeartbeats() public {
         oracle.setAnswer(1e8);
 
-        assertEq(heartbeatStore.getHeartbeat(feed.feedId()), 0); // zero heartbeat is a maxAge of 0 seconds
+        assertEq(heartbeatStore.getHeartbeat(feed.oracle()), 0); // zero heartbeat is a maxAge of 0 seconds
 
         (uint256 price, bool ok) = feed.getPriceByHeartbeats(type(uint256).max, false);
         assertEq(price, 1e6);
@@ -224,9 +224,9 @@ contract ChainLinkPriceFeedTest is Test {
     function testChainLinkGetPriceByHeartbeats() public {
         oracle.setAnswer(1e8);
 
-        heartbeatStore.setHeartbeat(feed.feedId(), 1000);
+        heartbeatStore.setHeartbeat(feed.oracle(), 1000);
 
-        assertEq(heartbeatStore.getHeartbeat(feed.feedId()), 1000); // heartbeat is a maxAge of 1000 seconds
+        assertEq(heartbeatStore.getHeartbeat(feed.oracle()), 1000); // heartbeat is a maxAge of 1000 seconds
 
         (uint256 price, bool ok) = feed.getPriceByHeartbeats(type(uint256).max, false);
         assertEq(price, 1e6);

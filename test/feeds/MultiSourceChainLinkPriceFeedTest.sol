@@ -70,11 +70,11 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         feed = new TestMultiSourceChainLinkPriceFeed(1, 18, oracles, oracleDecimals,
             isReverse, address(heartbeatStore));
 
-        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 0, 1000);
-        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 0), 1000); // heartbeat is a maxAge of 1000 seconds
+        heartbeatStore.setHeartbeat(oracles[0], 1000);
+        assertEq(heartbeatStore.getHeartbeat(oracles[0]), 1000); // heartbeat is a maxAge of 1000 seconds
 
-        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 1, 1000);
-        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 1), 1000); // heartbeat is a maxAge of 1000 seconds
+        heartbeatStore.setHeartbeat(oracles[1], 1000);
+        assertEq(heartbeatStore.getHeartbeat(oracles[1]), 1000); // heartbeat is a maxAge of 1000 seconds
 
         uint256 price = feed.getPrice(type(uint256).max, false);
         assertApproxEqRel(price,uint256(btcUsdPx)*1e18/uint256(ethUsdPx),1e12);
@@ -431,15 +431,14 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
     }
 
     function testMultiSourceChainLinkGetPriceByHeartbeats() public {
+        heartbeatStore.setHeartbeat(address(oracle1), 1000);
+        assertEq(heartbeatStore.getHeartbeat(address(oracle1)), 1000); // heartbeat is a maxAge of 1000 seconds
 
-        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 0, 1000);
-        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 0), 1000); // heartbeat is a maxAge of 1000 seconds
+        heartbeatStore.setHeartbeat(address(oracle2), 1000);
+        assertEq(heartbeatStore.getHeartbeat(address(oracle2)), 1000); // heartbeat is a maxAge of 1000 seconds
 
-        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 1, 1000);
-        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 1), 1000); // heartbeat is a maxAge of 1000 seconds
-
-        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 2, 1000);
-        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 2), 1000); // heartbeat is a maxAge of 1000 seconds
+        heartbeatStore.setHeartbeat(address(oracle3), 1000);
+        assertEq(heartbeatStore.getHeartbeat(address(oracle3)), 1000); // heartbeat is a maxAge of 1000 seconds
 
         oracle1.setAnswer(1e8);
         oracle2.setAnswer(1e6);
@@ -530,14 +529,14 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         assertEq(price, uint256(3112892347)/4);
         assertTrue(ok);
 
-        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 0, 1000);
-        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 0), 1000); // heartbeat is a maxAge of 1000 seconds
+        heartbeatStore.setHeartbeat(address(oracle1), 1000);
+        assertEq(heartbeatStore.getHeartbeat(address(oracle1)), 1000); // heartbeat is a maxAge of 1000 seconds
 
-        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 1, 1002);
-        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 1), 1002); // heartbeat is a maxAge of 1000 seconds
+        heartbeatStore.setHeartbeat(address(oracle2), 1002);
+        assertEq(heartbeatStore.getHeartbeat(address(oracle2)), 1002); // heartbeat is a maxAge of 1000 seconds
 
-        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 2, 1000);
-        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 2), 1000); // heartbeat is a maxAge of 1000 seconds
+        heartbeatStore.setHeartbeat(address(oracle3), 1000);
+        assertEq(heartbeatStore.getHeartbeat(address(oracle3)), 1000); // heartbeat is a maxAge of 1000 seconds
 
         (price, ok) = feed.getPriceByHeartbeats(1002, false); // 100.2% or 1.002 heartbeats
         assertEq(price, uint256(3112892347)/4);
@@ -556,8 +555,8 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         assertEq(price, uint256(3112892347)/4);
         assertTrue(ok);
 
-        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 1, 2000);
-        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 1), 2000); // heartbeat is a maxAge of 1000 seconds
+        heartbeatStore.setHeartbeat(address(oracle2), 2000);
+        assertEq(heartbeatStore.getHeartbeat(address(oracle2)), 2000); // heartbeat is a maxAge of 1000 seconds
 
         (price, ok) = feed.getPriceByHeartbeats(1004, false); // 100.4% or 1.004 heartbeats
         assertEq(price, uint256(3112892347)/4);

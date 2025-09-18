@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0;
 
 import "../../interfaces/IPriceFeed.sol";
-import "../../interfaces/IHeartbeatStore.sol";
 
 /// @title Base Price Feed Contract
 /// @author Daniel D. Alcarraz (https://github.com/0xDanr)
@@ -15,16 +14,12 @@ abstract contract PriceFeed is IPriceFeed {
     /// @inheritdoc IPriceFeed
     uint8 immutable public override decimals;
 
-    /// @inheritdoc IPriceFeed
-    address immutable public override heartbeatStore;
-
-    /// @dev Initialize feedId of the PriceFeed, decimals of token price is quoted in, and heartbeatStore used by this PriceFeed
-    constructor(uint16 _feedId, uint8 _decimals, address _heartbeatStore) {
+    /// @dev Initialize feedId of the PriceFeed, and decimals of token price is quoted in by this PriceFeed
+    constructor(uint16 _feedId, uint8 _decimals) {
         require(_feedId > 0, "INVALID_FEED_ID");
         require(_decimals >= 6, "INVALID_DECIMALS");
         feedId = _feedId;
         decimals = _decimals;
-        heartbeatStore = _heartbeatStore;
     }
 
     /// @inheritdoc IPriceFeed
@@ -52,8 +47,7 @@ abstract contract PriceFeed is IPriceFeed {
         if(maxHeartbeats > 100e3) maxHeartbeats = 100e3; // capped at 100 heartbeats
 
         bool stale;
-        uint256 heartbeat = IHeartbeatStore(heartbeatStore).getHeartbeat(feedId);
-        uint256 maxAge = maxHeartbeats * heartbeat / 1000;
+        uint256 maxAge = maxHeartbeats * _getHeartbeat() / 1000;
 
         (price, stale) = _getPrice(maxAge, strict);
         ok = _isPriceOk(price, stale, strict);
@@ -70,6 +64,10 @@ abstract contract PriceFeed is IPriceFeed {
         }
         return ok;
     }
+
+    /// @dev Get heartbeat for PriceFeed
+    /// @return heartbeat - maximum time it will take to update feed in seconds
+    function _getHeartbeat() internal virtual view returns (uint256);
 
     /// @dev Implemented by concrete PriceFeeds to get the price according to its own specific logic
     /// @param maxAge - maximum age in seconds to determine if price is stale

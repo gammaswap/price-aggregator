@@ -8,7 +8,7 @@ contract TestPriceFeed is PriceFeed {
     uint256 private price;
     bool private stale;
 
-    constructor(uint16 _feedId, uint8 _decimals, address _priceAggregator) PriceFeed(_feedId, _decimals, _priceAggregator) {
+    constructor(uint16 _feedId, uint8 _decimals) PriceFeed(_feedId, _decimals) {
     }
 
     function setPrice(uint256 _price) external {
@@ -21,5 +21,9 @@ contract TestPriceFeed is PriceFeed {
 
     function _getPrice(uint256, bool) internal virtual override view returns (uint256, bool) {
         return (price, stale);
+    }
+
+    function _getHeartbeat() internal virtual override view returns (uint256) {
+        return 0;
     }
 }
