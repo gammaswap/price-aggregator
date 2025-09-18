@@ -5,6 +5,8 @@ import 'forge-std/Test.sol';
 import "../contracts/TestChainLinkOracle.sol";
 import "../contracts/TestMultiSourceChainLinkPriceFeed.sol";
 import "../../contracts/feeds/MultiSourceChainLinkPriceFeed.sol";
+import "../../contracts/interfaces/IHeartbeatStore.sol";
+import "../../contracts/PriceAggregator.sol";
 
 contract MultiSourceChainLinkPriceFeedTest is Test {
 
@@ -17,6 +19,8 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
     bool[] public mIsReverse;
 
     TestMultiSourceChainLinkPriceFeed feed;
+
+    IHeartbeatStore heartbeatStore;
 
     function setUp() public {
         oracle1 = new TestChainLinkOracle();
@@ -35,7 +39,10 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         mOracleDecimals[1] = 6;
         mOracleDecimals[2] = 18;
 
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, mOracles, mOracleDecimals, mIsReverse);
+        heartbeatStore = IHeartbeatStore(address(new PriceAggregator(address(0))));
+
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, mOracles, mOracleDecimals,
+            mIsReverse, address(heartbeatStore));
     }
 
     function testBTCUSD_ETHUSD_PriceFeed() public {
@@ -60,9 +67,23 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         isReverse[0] = false;
         isReverse[1] = true;
 
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 18, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 18, oracles, oracleDecimals,
+            isReverse, address(heartbeatStore));
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 0, 1000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 0), 1000); // heartbeat is a maxAge of 1000 seconds
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 1, 1000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 1), 1000); // heartbeat is a maxAge of 1000 seconds
 
         uint256 price = feed.getPrice(type(uint256).max, false);
+        assertApproxEqRel(price,uint256(btcUsdPx)*1e18/uint256(ethUsdPx),1e12);
+
+        bool ok;
+        (price, ok)= feed.getPriceByTime(type(uint256).max, false);
+        assertApproxEqRel(price,uint256(btcUsdPx)*1e18/uint256(ethUsdPx),1e12);
+
+        (price, ok)= feed.getPriceByHeartbeats(type(uint256).max, false);
         assertApproxEqRel(price,uint256(btcUsdPx)*1e18/uint256(ethUsdPx),1e12);
 
         oracle1.setAnswer(ethUsdPx);
@@ -75,6 +96,12 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
 
         price = feed.getPrice(type(uint256).max, false);
         assertApproxEqRel(price,uint256(ethUsdPx)*1e18/uint256(btcUsdPx),1e12);
+
+        (price, ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertApproxEqRel(price,uint256(ethUsdPx)*1e18/uint256(btcUsdPx),1e12);
+
+        (price, ok)= feed.getPriceByHeartbeats(type(uint256).max, false);
+        assertApproxEqRel(price,uint256(ethUsdPx)*1e18/uint256(btcUsdPx),1e12);
     }
 
     function testMultiSourceChainLinkConstructorErrors() public {
@@ -83,38 +110,38 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
         bool[] memory isReverse = new bool[](1);
 
         vm.expectRevert("NOT_MULTIPLE_ORACLE_ADDRESS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracles = new address[](1);
         vm.expectRevert("NOT_MULTIPLE_ORACLE_ADDRESS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracles = new address[](2);
         vm.expectRevert("INVALID_ORACLE_LENGTH");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracleDecimals = new uint8[](2);
         vm.expectRevert("INVALID_REVERSE_LENGTH");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         isReverse = new bool[](2);
         vm.expectRevert("ZERO_ORACLE_ADDRESS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracles[0] = address(1);
         vm.expectRevert("INVALID_ORACLE_DECIMALS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracleDecimals[0] = 6;
         vm.expectRevert("ZERO_ORACLE_ADDRESS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracles[1] = address(2);
         vm.expectRevert("INVALID_ORACLE_DECIMALS");
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         oracleDecimals[1] = 6;
-        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse);
+        feed = new TestMultiSourceChainLinkPriceFeed(1, 6, oracles, oracleDecimals, isReverse, address(heartbeatStore));
 
         for(uint256 i = 0; i < oracles.length; i++) {
             assertEq(oracles[i],address(uint160(i + 1)));
@@ -310,5 +337,302 @@ contract MultiSourceChainLinkPriceFeedTest is Test {
 
         price = feed.getPrice(1002, true);
         assertEq(price, uint256(3112892347)/4);
+    }
+
+    function testMultiSourceChainLinkGetPriceByTime() public {
+        oracle1.setAnswer(1e8);
+        oracle2.setAnswer(1e6);
+        oracle3.setAnswer(1e18);
+
+        (uint256 price, bool ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertEq(price, 1e6);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(type(uint256).max, true);
+        assertEq(price, 1e6);
+        assertTrue(ok);
+
+        oracle2.setAnswer(2e8);
+
+        (price, ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertEq(price, 200e6);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(type(uint256).max, true);
+        assertEq(price, 200e6);
+        assertTrue(ok);
+
+        oracle3.setAnswer(-int256(1));
+        (price, ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertEq(price, 0);
+        assertFalse(ok);
+
+        vm.expectRevert("NEGATIVE_PRICE");
+        feed.getPriceByTime(type(uint256).max, true);
+
+        oracle3.setAnswer(311289234796);
+        (price, ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertEq(price, 200e6 * 311289234796 / uint256(1e18));
+        assertTrue(ok);
+
+        oracle1.setAnswer(311289234796);
+        oracle3.setAnswer(1e18);
+        (price, ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertEq(price, 200e6 * 311289234796 / uint256(1e8));
+        assertTrue(ok);
+
+        vm.warp(1000);
+
+        oracle2.setAnswer(1e6);
+        (price, ok) = feed.getPriceByTime(type(uint256).max, false);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(type(uint256).max, true);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(1000, true);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(1000, false);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        oracle2.setAnswer(2e6);
+        feed.setReverse(1,true);
+        (price, ok) = feed.getPriceByTime(1000, true);
+        assertEq(price, uint256(3112892347) / 2);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(1000, false);
+        assertEq(price, uint256(3112892347) / 2);
+        assertTrue(ok);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByTime(1000 - 2, true);
+
+        (price, ok) = feed.getPriceByTime(1000 - 2, false);
+        assertEq(price, uint256(3112892347) / 2);
+        assertFalse(ok);
+
+        vm.warp(1002);
+
+        oracle3.setAnswer(2e18);
+        feed.setReverse(2,true);
+        (price, ok) = feed.getPriceByTime(1002, false);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(1002, true);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+    }
+
+    function testMultiSourceChainLinkGetPriceByHeartbeats() public {
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 0, 1000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 0), 1000); // heartbeat is a maxAge of 1000 seconds
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 1, 1000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 1), 1000); // heartbeat is a maxAge of 1000 seconds
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 2, 1000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 2), 1000); // heartbeat is a maxAge of 1000 seconds
+
+        oracle1.setAnswer(1e8);
+        oracle2.setAnswer(1e6);
+        oracle3.setAnswer(1e18);
+
+        (uint256 price, bool ok) = feed.getPriceByHeartbeats(type(uint256).max, false);
+        assertEq(price, 1e6);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(type(uint256).max, true);
+        assertEq(price, 1e6);
+        assertTrue(ok);
+
+        oracle2.setAnswer(2e8);
+
+        (price, ok) = feed.getPriceByHeartbeats(type(uint256).max, false);
+        assertEq(price, 200e6);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(type(uint256).max, true);
+        assertEq(price, 200e6);
+        assertTrue(ok);
+
+        oracle3.setAnswer(-int256(1));
+        (price, ok) = feed.getPriceByHeartbeats(type(uint256).max, false);
+        assertEq(price, 0);
+        assertFalse(ok);
+
+        vm.expectRevert("NEGATIVE_PRICE");
+        feed.getPriceByHeartbeats(type(uint256).max, true);
+
+        oracle3.setAnswer(311289234796);
+        (price, ok) = feed.getPriceByHeartbeats(type(uint256).max, false);
+        assertEq(price, 200e6 * 311289234796 / uint256(1e18));
+        assertTrue(ok);
+
+        oracle1.setAnswer(311289234796);
+        oracle3.setAnswer(1e18);
+        (price, ok) = feed.getPriceByHeartbeats(type(uint256).max, false);
+        assertEq(price, 200e6 * 311289234796 / uint256(1e8));
+        assertTrue(ok);
+
+        vm.warp(1000);
+
+        oracle2.setAnswer(1e6);
+        (price, ok) = feed.getPriceByHeartbeats(type(uint256).max, false);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(type(uint256).max, true);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1000, true);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1000, false);
+        assertEq(price, 3112892347);
+        assertTrue(ok);
+
+        oracle2.setAnswer(2e6);
+        feed.setReverse(1,true);
+        (price, ok) = feed.getPriceByHeartbeats(1000, true);
+        assertEq(price, uint256(3112892347) / 2);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1000, false);
+        assertEq(price, uint256(3112892347) / 2);
+        assertTrue(ok);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByHeartbeats(1000 - 2, true);
+
+        (price, ok) = feed.getPriceByHeartbeats(1000 - 2, false);
+        assertEq(price, uint256(3112892347) / 2);
+        assertFalse(ok);
+
+        vm.warp(1002);
+
+        oracle3.setAnswer(2e18);
+        feed.setReverse(2,true);
+        (price, ok) = feed.getPriceByHeartbeats(1002, false);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1002, true);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 0, 1000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 0), 1000); // heartbeat is a maxAge of 1000 seconds
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 1, 1002);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 1), 1002); // heartbeat is a maxAge of 1000 seconds
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 2, 1000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 2), 1000); // heartbeat is a maxAge of 1000 seconds
+
+        (price, ok) = feed.getPriceByHeartbeats(1002, false); // 100.2% or 1.002 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        vm.warp(1004);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByHeartbeats(1002, true);
+
+        (price, ok) = feed.getPriceByHeartbeats(1002, false); // 100.2% or 1.002 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertFalse(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        heartbeatStore.setHeartbeatByIndex(feed.feedId(), 1, 2000);
+        assertEq(heartbeatStore.getHeartbeatByIndex(feed.feedId(), 1), 2000); // heartbeat is a maxAge of 1000 seconds
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        vm.warp(2000);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByHeartbeats(1004, true);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertFalse(ok);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByHeartbeats(2000-1, true);
+
+        (price, ok) = feed.getPriceByHeartbeats(2000-1, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertFalse(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(2000, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(2000, true); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        oracle1.setUpdatedAt(block.timestamp);
+        oracle3.setUpdatedAt(block.timestamp);
+
+        (price, ok) = feed.getPriceByHeartbeats(2000-1, true);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(2000-1, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, true);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false); // 100.4% or 1.004 heartbeats
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        vm.warp(2008);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, true);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        vm.warp(2009);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByHeartbeats(1004, true);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false);
+        assertEq(price, uint256(3112892347)/4);
+        assertFalse(ok);
+
+        oracle2.setUpdatedAt(block.timestamp);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, true);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(1004, false);
+        assertEq(price, uint256(3112892347)/4);
+        assertTrue(ok);
     }
 }

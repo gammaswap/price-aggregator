@@ -8,7 +8,7 @@ contract TestPriceFeed is PriceFeed {
     uint256 private price;
     bool private stale;
 
-    constructor(uint16 _feedId, uint8 _decimals) PriceFeed(_feedId, _decimals) {
+    constructor(uint16 _feedId, uint8 _decimals, address _priceAggregator) PriceFeed(_feedId, _decimals, _priceAggregator) {
     }
 
     function setPrice(uint256 _price) external {

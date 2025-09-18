@@ -3,22 +3,25 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 import "./contracts/TestPriceFeed.sol";
+import "./contracts/TestHeartbeatStore.sol";
 
 contract PriceFeedTest is Test {
 
     TestPriceFeed feed;
+    TestHeartbeatStore heartbeatStore;
 
     function setUp() public {
-        feed = new TestPriceFeed(1, 6);
+        heartbeatStore = new TestHeartbeatStore();
+        feed = new TestPriceFeed(1, 6, address(heartbeatStore));
         feed.setPrice(1e18);
     }
 
     function testConstructorErrors() public {
         vm.expectRevert("INVALID_FEED_ID");
-        feed = new TestPriceFeed(0, 6);
+        feed = new TestPriceFeed(0, 6, address(0));
 
         vm.expectRevert("INVALID_DECIMALS");
-        feed = new TestPriceFeed(1, 5);
+        feed = new TestPriceFeed(1, 5, address(0));
     }
 
     function testGetPrice() public {
@@ -44,6 +47,34 @@ contract PriceFeedTest is Test {
         assertEq(price, 0);
     }
 
+    function testGetPriceByTime() public {
+        (uint256 price, bool ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByTime(0,true);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        feed.setStale(true);
+
+        (price, ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 1e18);
+        assertFalse(ok);
+
+        feed.setStale(false);
+
+        (price, ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        feed.setPrice(0);
+
+        (price, ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 0);
+        assertFalse(ok);
+    }
+
     function testGetPriceStrict() public {
         feed.setStale(true);
 
@@ -63,5 +94,62 @@ contract PriceFeedTest is Test {
         assertEq(price, 0);
     }
 
+
+    function testGetPriceByTimeStrict() public {
+        feed.setStale(true);
+
+        vm.expectRevert("STALE_PRICE");
+        feed.getPriceByTime(0,true);
+
+        (uint256 price, bool ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 1e18);
+        assertFalse(ok);
+
+        feed.setStale(false);
+        feed.setPrice(0);
+
+        vm.expectRevert("INVALID_PRICE");
+        feed.getPriceByTime(0,true);
+
+        (price, ok) = feed.getPriceByTime(0,false);
+        assertEq(price, 0);
+        assertFalse(ok);
+    }
+
+    function testGetPriceByHeartbeats() public {
+        assertEq(feed.heartbeatStore(), address(heartbeatStore));
+
+        assertEq(heartbeatStore.getHeartbeat(feed.feedId()), 0);
+
+        heartbeatStore.setHeartbeat(feed.feedId(), 1000);
+
+        assertEq(heartbeatStore.getHeartbeat(feed.feedId()), 1000);
+
+        (uint256 price, bool ok) = feed.getPriceByHeartbeats(0,false);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        (price, ok) = feed.getPriceByHeartbeats(0,true);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        feed.setStale(true);
+
+        (price, ok) = feed.getPriceByHeartbeats(0,false);
+        assertEq(price, 1e18);
+        assertFalse(ok);
+
+        feed.setStale(false);
+
+        (price, ok) = feed.getPriceByHeartbeats(0,false);
+        assertEq(price, 1e18);
+        assertTrue(ok);
+
+        feed.setPrice(0);
+
+        (price, ok) = feed.getPriceByHeartbeats(0,false);
+        assertEq(price, 0);
+        assertFalse(ok);
+    }
 }
 

@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+pragma solidity ^0.8.0;
+
+/// @title Interface for Hearbeat Store Contract
+/// @author Daniel D. Alcarraz (https://github.com/0xDanr)
+/// @notice Interface for contract to store heartbeats of different price feeds
+/// @dev Hearbeat is stored in seconds
+interface IHeartbeatStore {
+
+    /// @dev Get heartbeat by feedId
+    /// @param feedId - ID that identifies price feed to get price from
+    /// @return heartbeat - max time elapsed in seconds before price feed updates
+    function getHeartbeat(uint16 feedId) external view returns(uint256 heartbeat);
+
+    /// @dev Set the heartbeat for a price feed identified by its feedId
+    /// @param feedId - ID that identifies price feed to get price from
+    /// @param heartbeat - max time elapsed in seconds before price feed updates
+    function setHeartbeat(uint16 feedId, uint256 heartbeat) external;
+
+    /// @dev Get heartbeat by feedId
+    /// @param feedId - ID that identifies price feed to get price from
+    /// @param index - heartbeat index for multi source price feeds (single source should always be 0)
+    /// @return heartbeat - max time elapsed in seconds before price feed updates
+    function getHeartbeatByIndex(uint16 feedId, uint256 index) external view returns(uint256 heartbeat);
+
+    /// @dev Set the heartbeat for a price feed identified by its feedId
+    /// @param feedId - ID that identifies price feed to get price from
+    /// @param index - heartbeat index for multi source price feeds (single source should always be 0)
+    /// @param heartbeat - max time elapsed in seconds before price feed updates
+    function setHeartbeatByIndex(uint16 feedId, uint256 index, uint256 heartbeat) external;
+}
