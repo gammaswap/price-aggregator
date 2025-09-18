@@ -19,6 +19,6 @@ contract TestMultiSourceChainLinkPriceFeed is MultiSourceChainLinkPriceFeed {
         if(_oracleDecimals > 5) {
             oracleDecimals[id] = _oracleDecimals;
         }
-        return _getSingleOraclePrice(id, maxAge, strict);
+        return _getSingleOraclePrice(oracles[id], oracleDecimals[id], _isReverse, maxAge, strict);
     }
 }
