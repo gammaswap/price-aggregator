@@ -6,7 +6,7 @@ import "../contracts/TestChainLinkOracle.sol";
 import "../contracts/TestMultiSourceChainLinkPriceFeed.sol";
 import "../../contracts/feeds/MultiSourceChainLinkPriceFeed.sol";
 import "../../contracts/interfaces/IHeartbeatStore.sol";
-import { PriceAggregator } from "../../contracts/PriceAggregator.sol";
+import "../../contracts/PriceAggregator.sol";
 
 contract MultiSourceChainLinkPriceFeedTest is Test {
 

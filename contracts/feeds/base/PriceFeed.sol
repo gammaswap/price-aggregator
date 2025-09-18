@@ -18,7 +18,7 @@ abstract contract PriceFeed is IPriceFeed {
     /// @inheritdoc IPriceFeed
     address immutable public override heartbeatStore;
 
-    /// @dev Initialize feedId of PriceFeed and decimals of price returned by this PriceFeed
+    /// @dev Initialize feedId of the PriceFeed, decimals of token price is quoted in, and heartbeatStore used by this PriceFeed
     constructor(uint16 _feedId, uint8 _decimals, address _heartbeatStore) {
         require(_feedId > 0, "INVALID_FEED_ID");
         require(_decimals >= 6, "INVALID_DECIMALS");
@@ -59,6 +59,7 @@ abstract contract PriceFeed is IPriceFeed {
         ok = _isPriceOk(price, stale, strict);
     }
 
+    /// @dev Return false if price is zero or stale. When in strict mode revert
     function _isPriceOk(uint256 price, bool stale, bool strict) internal virtual view returns (bool ok){
         ok = !stale;
         if(strict) {

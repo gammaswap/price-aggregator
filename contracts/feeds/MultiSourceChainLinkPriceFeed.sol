@@ -19,7 +19,7 @@ contract MultiSourceChainLinkPriceFeed is PriceFeed {
     /// @dev if true use the reciprocal of the price returned by ChainLink
     bool[] public isReverse;
 
-    /// @dev Initialize decimals, oracles, and oracle decimals
+    /// @dev Initialize decimals, oracles, oracle decimals, and heartbeatStore
     constructor(uint16 _feedId, uint8 _decimals, address[] memory _oracles, uint8[] memory _oracleDecimals,
         bool[] memory _isReverse, address _heartbeatStore) PriceFeed(_feedId, _decimals, _heartbeatStore) {
         require(_oracles.length > 1, "NOT_MULTIPLE_ORACLE_ADDRESS");

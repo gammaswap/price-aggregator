@@ -16,7 +16,7 @@ contract ChainLinkPriceFeed is PriceFeed {
     /// @dev address of price feed contract in ChainLink
     address immutable public oracle;
 
-    /// @dev Initialize decimals, oracle, and oracle decimals
+    /// @dev Initialize decimals, oracle, oracle decimals, and heartbeatStore
     constructor(uint16 _feedId, uint8 _decimals, address _oracle, uint8 _oracleDecimals, address _heartbeatStore)
         PriceFeed(_feedId, _decimals, _heartbeatStore) {
         require(_oracle != address(0), "ZERO_ADDRESS");
