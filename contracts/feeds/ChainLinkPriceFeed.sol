@@ -17,7 +17,7 @@ contract ChainLinkPriceFeed is PriceFeed {
     /// @dev address of price feed contract in ChainLink
     address immutable public oracle;
 
-    /// @dev address holding heartbeat for this PriceFeed
+    /// @dev address holding heartbeat of feed source of this PriceFeed
     address immutable public heartbeatStore;
 
     /// @dev Initialize decimals, oracle, oracle decimals, and heartbeatStore

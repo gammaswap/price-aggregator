@@ -11,7 +11,7 @@ import "./base/PriceFeed.sol";
 /// @notice PriceFeed implementation for Oracle using multiple ChainLink price feeds
 contract MultiSourceChainLinkPriceFeed is PriceFeed {
 
-    /// @dev address holding heartbeat for this PriceFeed
+    /// @dev address holding heartbeats of feed sources of this PriceFeed
     address immutable public heartbeatStore;
 
     /// @dev decimals of price returned by ChainLink price feed
